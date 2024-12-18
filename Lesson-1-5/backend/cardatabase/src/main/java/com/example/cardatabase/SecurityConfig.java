@@ -15,6 +15,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -22,10 +29,13 @@ public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthenticationFilter authenticationFilter;
+    private final AuthEntryPoint authEntryPoint;
+
     public SecurityConfig(UserDetailsServiceImpl userDetailsService,
-                          AuthenticationFilter authenticationFilter) {
+                          AuthenticationFilter authenticationFilter, AuthEntryPoint authEntryPoint) {
         this.userDetailsService = userDetailsService;
         this.authenticationFilter = authenticationFilter;
+        this.authEntryPoint = authEntryPoint;
     }
 
     public void configureGlobal (AuthenticationManagerBuilder auth)
@@ -44,10 +54,30 @@ public class SecurityConfig {
             AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+
+        // Allow all origins, methods, and headers
+        config.setAllowedOrigins(Arrays.asList("*"));
+        config.setAllowedMethods(Arrays.asList("*"));
+        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowCredentials(false);
+        config.applyPermitDefaultValues();
+
+        // Register CORS configuration
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws
             Exception {
         http.csrf((csrf) -> csrf.disable())
+                .cors(withDefaults())
                 .sessionManagement((sessionManagement) ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests((authorizeHttpRequests) ->
@@ -55,7 +85,8 @@ public class SecurityConfig {
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated())
-                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling((exceptionHandling) -> exceptionHandling.authenticationEntryPoint(authEntryPoint));
         return http.build();
     }
 
