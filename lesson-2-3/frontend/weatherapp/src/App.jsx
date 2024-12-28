@@ -4,8 +4,7 @@ function App() {
   const [weather, setWeather] = useState({temp: '', desc: '', icon: ''});
  
   useEffect(() => { 
-    fetch('https://api.openweathermap.org/data/2.5/weather?q=\
-          London&APIKey=YOUR_API_KEY&units=metric')
+    fetch('https://api.openweathermap.org/data/2.5/weather?q=Nablus,ps&APIKey=YOUR_API_KEY&units=metric')
     .then(response => response.json())
     .then(result => {
       setWeather({
@@ -21,8 +20,7 @@ function App() {
       <>
         <p>Temperature: {weather.temp} °C</p>
         <p>Description: {weather.desc}</p>
-        <img src={
-            `https ://openweathermap .org/img/wn/${weather.icon}@2x.png`
+        <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`
         }
         alt="Weather icon" />
       </>
